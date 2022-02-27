@@ -1,11 +1,11 @@
 from setuptools import setup
 
-setup(name='pythonpackagesample',
+setup(name='Beautifly_B',
       version='0.1',  # Development release
-      description='Python Packaging Starting Kit - Simple Structure to creater your own package - for training purposes!',
+      description='Beautifly_B team B packages',
       url='https://github.com/manoelgadi/pythonpackagesample',
-      author='Prof. Manoel Gadi',
-      author_email='mfalonso@faculty.ie.edu',
+      author='TEamB,
+      author_email='azmidri@student.ie.edu',
       license='MIT',
-          packages=['pythonpackagesample'],
+          packages=['Beautifly_B],
       zip_safe=False)
