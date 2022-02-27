@@ -1,6 +1,6 @@
-# pythonpackagesample
+# Beautifly_B
 This is a simple minimal set of codes to create a Python Package
 
 TEST PUSHING...
 ...
-"# pythonpackagesample" 
+"# Beautifly_B" 
