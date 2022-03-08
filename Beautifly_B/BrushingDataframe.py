@@ -19,6 +19,7 @@ from sklearn.preprocessing import OneHotEncoder
 pd.options.mode.chained_assignment = None
 
 from woe import WOE
+from print_msg import Print_Msg
 
 pd.options.plotting.backend = 'holoviews'
 
@@ -47,6 +48,10 @@ class BrushingDataframe(pd.DataFrame):
 #-----------------------------------------------------------------------------
                         # DATA HANDLING
 #-----------------------------------------------------------------------------
+    def print_msg(text):
+        print("--------------------------------------------------------------------------")
+        print(text)
+        print("--------------------------------------------------------------------------")
 
     def SetAttributes(self, kwargs):
         """
@@ -106,7 +111,7 @@ class BrushingDataframe(pd.DataFrame):
                     self[column].fillna(method='ffill', inplace=True)
    
         return self
-    def cleaning_missing_display(self, input_vars=[] ):
+    def scanning(self, input_vars=[] ):
        
         """
         TO BE IMPLEMENTED: data cleaning (provide methods for data scanning and cleaning, 
@@ -121,14 +126,24 @@ class BrushingDataframe(pd.DataFrame):
         """
         if input_vars:
             self = self[input_vars]
+
         ## Check Null Values    
         null_df = self.isna().sum().to_frame("Null Counts")
         null_df = null_df.loc[null_df ['Null Counts']>0].rename_axis('Features').reset_index()
         null_table = hv.Table(null_df, label='Features with Null Values')
-        ## Check data types
+
+       ## Check data types
         types_df  = self.dtypes.to_frame("Data Types").rename_axis('Features').reset_index()
         types_df ["Data Types"] = types_df ["Data Types"].astype(str)
+
+        ## percentage unique features with total rows
+        unique_feat =[]
+        for feature in types_df['Features']:
+            unique_feat.append(int(self[feature].nunique() / self.shape[0] * 100))
+        types_df["Unique Vs Rows %"]  =   unique_feat
         types_df.loc[(types_df['Data Types'].str.contains("object", case=False)) & (types_df['Features'].str.contains("date", case=False) ),"Recomendation"] = "Consider convert to Date or Time type"
+        types_df.loc[(types_df["Unique Vs Rows %"] > 5) & (types_df['Data Types'] == 'object') ,"Recomendation"] = "High unique categories and should be removed or transformed"
+        types_df.loc[(types_df["Unique Vs Rows %"] > 80) ,"Recomendation"] = "Suspected record ID and will be removed"
         types_df = types_df.fillna("")
         typ_table = hv.Table(types_df , label='Features data types')
         ## Plot Histogram for numericals
@@ -150,9 +165,12 @@ class BrushingDataframe(pd.DataFrame):
 
         corr = self.corr()
         corrplots = hv.HeatMap((corr.index, corr.columns, corr.values)).opts(title='Correlation Matrix').opts(width=800,height=500,xrotation=45,tools=['hover'])
-        p = (null_table.opts(height=100) + typ_table.opts(width=800, height=400) + catplots + histplots + corrplots ).cols(1)
-
-        return p
+        p = (null_table.opts(height=100) + typ_table.opts(width=700, height=400) + catplots + histplots + corrplots ).cols(2)
+        
+        renderer = hv.renderer('bokeh')
+        renderer.save(p, 'Beutifly_B EDA')
+        Print_Msg.print_msg1("Data scan and visualization is reported under Beutifly_B EDA.html. Please check in your current notebook folder. ")
+        
     
     
 
@@ -173,20 +191,35 @@ class BrushingDataframe(pd.DataFrame):
         if input_vars:
             self = self[input_vars]
         ### Convert feature with Date descrtiption to date
-        log_recom = []
-
-        log_recom.append("Convert feature with Date descrtiption to date")
         for column in self.columns:
             if (column.lower().find('date') != -1 ) & (self[column].dtype == 'object'):
                 self[column] = pd.to_datetime(self[column])
-                log_recom.append("  Convert "+column+" to Date types")
+                #log_recom.append("  Convert "+column+" to Date types")
                 month = str(column.upper().replace('DATE', ""))+"_MONTH"
                 self[month] = self[column].dt.month_name(locale='English')
-                log_recom.append("Create new feature based on refference day ")
+                #log_recom.append("Create new feature based on refference day ")
                 if (column != reference_date) and (reference_date != ''):
                     new_column = str(reference_date)+"___"+str(column)
                     self[new_column] = abs(self[column] - pd.to_datetime(self[reference_date]))
                     self[new_column] = self[new_column].dt.days
+        
+        ## remove feature with same number of records
+        unique_feat =[]
+        for column in self.columns:
+            if (self[column].nunique() / self.shape[0] * 100) >90 :
+                unique_feat.append(column)
+        self.drop(columns=unique_feat , axis = 1,inplace=True)
+        Print_Msg.print_msg1("Delete features that suspected record ID {0}...".format(str(unique_feat[:])))
+
+        ### Assign dummy for small categorical values features based on treshold
+        dummy_feat=[]
+        for column in self.columns:
+           if (self[column].dtype == 'object') & (self[column].nunique() < WOE_tresh):
+               dummy_feat.append(column)
+        dummy_df = pd.get_dummies(self[dummy_feat])
+        self.drop(columns = dummy_feat, axis = 1,inplace=True)
+        self = pd.concat([self, dummy_df], axis=1)
+        Print_Msg.print_msg1("Replace categorical features with dummies {0}...".format(str(dummy_feat[:])))
 
         ### Split 
         self = self.reset_index()
@@ -209,3 +242,5 @@ class BrushingDataframe(pd.DataFrame):
         X_train.drop([target], axis = 1,inplace=True) 
         X_test.drop([target], axis = 1,inplace=True) 
         return X_train, X_test, y_train, y_test
+
+    
