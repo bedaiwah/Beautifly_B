@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Aug  6 22:49:01 2021
+Created on 4th March 2022
 
-@author: Team B 2022
+@author: Team B IE University
 """
 
 import pandas as pd
@@ -12,6 +12,14 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn import preprocessing
 import holoviews as hv; hv.extension('bokeh', 'matplotlib')
 import pandas as pd
+from datetime import date
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
+pd.options.mode.chained_assignment = None
+
+from woe import WOE
+
 pd.options.plotting.backend = 'holoviews'
 
 class BrushingDataframe(pd.DataFrame):
@@ -89,6 +97,7 @@ class BrushingDataframe(pd.DataFrame):
             try:
                 self[column].fillna(self[column].median(), inplace=True)
             except TypeError:
+                self[column] = self[column].str.lower()
                 most_frequent = self[column].mode()
                 if len(most_frequent) > 0:
                     self[column].fillna(self[column].mode()[0], inplace=True)
@@ -119,29 +128,37 @@ class BrushingDataframe(pd.DataFrame):
         ## Check data types
         types_df  = self.dtypes.to_frame("Data Types").rename_axis('Features').reset_index()
         types_df ["Data Types"] = types_df ["Data Types"].astype(str)
-        types_df.loc[(types_df['Features'].str.contains("date", case=False)) |(types_df['Features'].str.contains("year", case=False))
-        |(types_df['Features'].str.contains("month", case=False)),"Recomendation"] = "Consider convert to Date or Time type"
+        types_df.loc[(types_df['Data Types'].str.contains("object", case=False)) & (types_df['Features'].str.contains("date", case=False) ),"Recomendation"] = "Consider convert to Date or Time type"
         types_df = types_df.fillna("")
         typ_table = hv.Table(types_df , label='Features data types')
         ## Plot Histogram for numericals
         hist_plots = []
         for column in self._get_numeric_data().columns:
-            hist_plots.append(self[column].plot.hist(bins=100, bin_range=(0, self[column].max()), title='Histogram and Box Plot ' + column, width=500))
-            hist_plots.append(self[column].plot.box(invert=True, width=500).opts(xrotation=90))
-        histplots = hv.Layout(hist_plots).cols(2)
+            hist_plots.append(self[column].plot.hist(bins=100, bin_range=(0, self[column].max()), title='Histogram and Box Plot ' + column).opts(width=800))
+            hist_plots.append(self[column].plot.box(invert=True).opts(xrotation=90,width=800))
+        
+        histplots = hv.Layout(hist_plots)
         ## Plot for categorical
         cat_plots = []
         for column in self.select_dtypes(include=['object']).dtypes.index:
-            if self[column].nunique() < 25:
-                cat_plots.append(self[column].value_counts().sort_index().plot.bar(title=column, xlabel=column,ylabel='counts', width=800, height=350))
+            #if int(self[column].nunique()) < 100:
+            df = pd.DataFrame()
+            df = self[column].value_counts().sort_index().to_frame().reset_index().rename(columns={"index": column, column: "Counts"})
+            df = df.sort_values(by='Counts', ascending=False).head(100)
+            cat_plots.append( hv.Bars(df.groupby(column).sum()[["Counts"]]).opts(invert_axes=True, width=800,height=500,xrotation=45,title=column))
         catplots = hv.Layout(cat_plots)
-        p = (null_table.opts(height=100) + typ_table.opts(width=800, height=400) + histplots + catplots ).cols(1)
+
+        corr = self.corr()
+        corrplots = hv.HeatMap((corr.index, corr.columns, corr.values)).opts(title='Correlation Matrix').opts(width=800,height=500,xrotation=45,tools=['hover'])
+        p = (null_table.opts(height=100) + typ_table.opts(width=800, height=400) + catplots + histplots + corrplots ).cols(1)
+
         return p
     
- 
-    def recommended_transformation(self, input_vars=[], target='' ):
-        """
+    
 
+    def recommended_transformation(self, input_vars=[], WOE_tresh = 10,  target='',reference_date= '',test_size_in= 0.3):
+        """
+        
         TO BE IMPLEMENTED: data preparation (for each column provide methods to perform
         transformations - for example: time calculation like age, days as customers, 
         days to due date, label encoding, imputation, standard scalling, dummy creation 
@@ -153,5 +170,42 @@ class BrushingDataframe(pd.DataFrame):
         -------
           A print with the analysis or new transformed columns.                
         """
-        return "To be implemented."
-    
+        if input_vars:
+            self = self[input_vars]
+        ### Convert feature with Date descrtiption to date
+        log_recom = []
+
+        log_recom.append("Convert feature with Date descrtiption to date")
+        for column in self.columns:
+            if (column.lower().find('date') != -1 ) & (self[column].dtype == 'object'):
+                self[column] = pd.to_datetime(self[column])
+                log_recom.append("  Convert "+column+" to Date types")
+                month = str(column.upper().replace('DATE', ""))+"_MONTH"
+                self[month] = self[column].dt.month_name(locale='English')
+                log_recom.append("Create new feature based on refference day ")
+                if (column != reference_date) and (reference_date != ''):
+                    new_column = str(reference_date)+"___"+str(column)
+                    self[new_column] = abs(self[column] - pd.to_datetime(self[reference_date]))
+                    self[new_column] = self[new_column].dt.days
+
+        ### Split 
+        self = self.reset_index()
+        self.drop(['index'], axis = 1,inplace=True)
+        self = self.select_dtypes(exclude=['datetime64[ns]'])
+        y = self[target]
+        X = self.drop([target], axis = 1) 
+        X_train, X_test, y_train, y_test = train_test_split(X, y,stratify=self[target], test_size=test_size_in)
+        
+        ### WOE on categorical features based on treshold default 10 unique category values 
+        my_WOE = WOE()
+        X_train.loc[:,target] = y_train
+        X_test.loc[:,target] = y_test
+
+        for column in self.columns:
+           if (self[column].dtype == 'object') & (self[column].nunique() > WOE_tresh):
+                my_WOE.fit(X_train,column,target)
+                X_train.loc[:,column] = my_WOE.transform(X_train,column,target)
+                X_test.loc[:,column] = my_WOE.transform(X_test,column,target)
+        X_train.drop([target], axis = 1,inplace=True) 
+        X_test.drop([target], axis = 1,inplace=True) 
+        return X_train, X_test, y_train, y_test
