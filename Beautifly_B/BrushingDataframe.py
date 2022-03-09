@@ -18,8 +18,13 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 pd.options.mode.chained_assignment = None
 
+## custom classes
 from woe import WOE
 from print_msg import Print_Msg
+from stats_bs import Stats_BS
+from ordinal import Ordinal
+import numpy
+## 
 
 pd.options.plotting.backend = 'holoviews'
 
@@ -132,6 +137,20 @@ class BrushingDataframe(pd.DataFrame):
         null_df = null_df.loc[null_df ['Null Counts']>0].rename_axis('Features').reset_index()
         null_table = hv.Table(null_df, label='Features with Null Values')
 
+        ## Provide Basic stats
+        kurt_l= []
+        column_l =[]
+        gmean_l = []
+        skew_1 = []
+        for column in self.select_dtypes(include='number').columns:
+            column_l.append(column)
+            kurt, gmean,skew  = Stats_BS.make_stats(self[column])
+            kurt_l.append(kurt)
+            gmean_l.append(gmean)
+            skew_1 .append(skew)
+        stats_df  = pd.DataFrame(list(zip(column_l,kurt_l, gmean_l,skew_1)), columns=['Feature','Kurtosis','GMean','Skew'])
+        stats_table = hv.Table(stats_df, label='Features Basic Stats')
+
        ## Check data types
         types_df  = self.dtypes.to_frame("Data Types").rename_axis('Features').reset_index()
         types_df ["Data Types"] = types_df ["Data Types"].astype(str)
@@ -160,21 +179,21 @@ class BrushingDataframe(pd.DataFrame):
             df = pd.DataFrame()
             df = self[column].value_counts().sort_index().to_frame().reset_index().rename(columns={"index": column, column: "Counts"})
             df = df.sort_values(by='Counts', ascending=False).head(100)
-            cat_plots.append( hv.Bars(df.groupby(column).sum()[["Counts"]]).opts(invert_axes=True, width=800,height=500,xrotation=45,title=column))
+            cat_plots.append( hv.Bars(df.groupby(column).sum()[["Counts"]]).opts(invert_axes=True, width=800,height=500,xrotation=45,title=column,tools=['hover']))
         catplots = hv.Layout(cat_plots)
 
         corr = self.corr()
         corrplots = hv.HeatMap((corr.index, corr.columns, corr.values)).opts(title='Correlation Matrix').opts(width=800,height=500,xrotation=45,tools=['hover'])
-        p = (null_table.opts(height=100) + typ_table.opts(width=700, height=400) + catplots + histplots + corrplots ).cols(2)
+        p = (null_table.opts(height=100) + stats_table.opts(width=700, height=400) +  typ_table.opts(width=800, height=400) + catplots + histplots + corrplots ).cols(2)
         
         renderer = hv.renderer('bokeh')
         renderer.save(p, 'Beutifly_B EDA')
-        Print_Msg.print_msg1("Data scan and visualization is reported under Beutifly_B EDA.html. Please check in your current notebook folder. ")
+        Print_Msg.print_msg1("Data scan and visualization is reported under Beutifly_B EDA.html. Please check your current notebook folder. ")
         
     
     
 
-    def recommended_transformation(self, input_vars=[], WOE_tresh = 10,  target='',reference_date= '',test_size_in= 0.3):
+    def recommended_transformation(self, input_vars=[], ordinal_vars=[], WOE_tresh = 10,  target='',reference_date= '',test_size_in= 0.3, WOE_print = False):
         """
         
         TO BE IMPLEMENTED: data preparation (for each column provide methods to perform
@@ -188,59 +207,83 @@ class BrushingDataframe(pd.DataFrame):
         -------
           A print with the analysis or new transformed columns.                
         """
+        df = self.copy()
         if input_vars:
-            self = self[input_vars]
+            df = df[input_vars]
+            
+            
+        ### Check if Ordinal features is selected 
+        for column in ordinal_vars:
+            new_ord = column+"_ORD"
+            df[new_ord] = np.vectorize(Ordinal.make_ordinal)(df[column].values)
+        try:
+            df.drop(columns=ordinal_vars , axis = 1,inplace=True)
+        except ValueError:
+            pass        
+
+
         ### Convert feature with Date descrtiption to date
-        for column in self.columns:
-            if (column.lower().find('date') != -1 ) & (self[column].dtype == 'object'):
-                self[column] = pd.to_datetime(self[column])
+        for column in df.columns:
+            if (column.lower().find('date') != -1 ) & (df[column].dtype == 'object'):
+                df[column] = pd.to_datetime(df[column])
                 #log_recom.append("  Convert "+column+" to Date types")
                 month = str(column.upper().replace('DATE', ""))+"_MONTH"
-                self[month] = self[column].dt.month_name(locale='English')
+                df[month] = df[column].dt.month_name(locale='English')
+                Print_Msg.print_msg1("Transformed {0} from Date to Month".format(column))
                 #log_recom.append("Create new feature based on refference day ")
                 if (column != reference_date) and (reference_date != ''):
                     new_column = str(reference_date)+"___"+str(column)
-                    self[new_column] = abs(self[column] - pd.to_datetime(self[reference_date]))
-                    self[new_column] = self[new_column].dt.days
-        
+                    df[new_column] = abs(df[column] - pd.to_datetime(df[reference_date]))
+                    df[new_column] = df[new_column].dt.days
+                    Print_Msg.print_msg1("Transformed {0} from Date to number {1} \n of days based on target {2} ".format(column,new_column,reference_date))
+
+            
         ## remove feature with same number of records
         unique_feat =[]
-        for column in self.columns:
-            if (self[column].nunique() / self.shape[0] * 100) >90 :
+        for column in df.columns:
+            if (df[column].nunique() / df.shape[0] * 100) >90 :
                 unique_feat.append(column)
-        self.drop(columns=unique_feat , axis = 1,inplace=True)
+        df.drop(columns=unique_feat , axis = 1,inplace=True)
         Print_Msg.print_msg1("Delete features that suspected record ID {0}...".format(str(unique_feat[:])))
 
         ### Assign dummy for small categorical values features based on treshold
         dummy_feat=[]
-        for column in self.columns:
-           if (self[column].dtype == 'object') & (self[column].nunique() < WOE_tresh):
-               dummy_feat.append(column)
-        dummy_df = pd.get_dummies(self[dummy_feat])
-        self.drop(columns = dummy_feat, axis = 1,inplace=True)
-        self = pd.concat([self, dummy_df], axis=1)
-        Print_Msg.print_msg1("Replace categorical features with dummies {0}...".format(str(dummy_feat[:])))
+        for column in df.columns:
+            if (df[column].dtype == 'object') & (df[column].nunique() <= WOE_tresh):
+                dummy_feat.append(column)
+        try:
+            dummy_df = pd.get_dummies(df[dummy_feat])
+            df.drop(columns = dummy_feat, axis = 1,inplace=True)
+            df = pd.concat([df, dummy_df], axis=1)
+            Print_Msg.print_msg1("Replace categorical features with dummies {0}...".format(str(dummy_feat[:])))
+        except ValueError:
+            pass
 
         ### Split 
-        self = self.reset_index()
-        self.drop(['index'], axis = 1,inplace=True)
-        self = self.select_dtypes(exclude=['datetime64[ns]'])
-        y = self[target]
-        X = self.drop([target], axis = 1) 
-        X_train, X_test, y_train, y_test = train_test_split(X, y,stratify=self[target], test_size=test_size_in)
-        
-        ### WOE on categorical features based on treshold default 10 unique category values 
+        df = df.reset_index()
+        df.drop(['index'], axis = 1,inplace=True)
+        df = df.select_dtypes(exclude=['datetime64[ns]'])
+        y = df[target]
+        X = df.drop([target], axis = 1) 
+        X_train, X_test, y_train, y_test = train_test_split(X, y,stratify=df[target], test_size=test_size_in)
+        Print_Msg.print_msg1("Split train with {0} records and test with {1} records \n both with {2} columns ".format(str(X_train.shape[0]),str( X_test.shape[0]),str(X_train.shape[1])))
+            
+        ### WOE on categorical features based on treshold default 10 unique category values. Fit on training data and transform to training and test data
+        ### We use WOE to reduce number of dummy features from features with high unique categorical values
         my_WOE = WOE()
         X_train.loc[:,target] = y_train
         X_test.loc[:,target] = y_test
 
-        for column in self.columns:
-           if (self[column].dtype == 'object') & (self[column].nunique() > WOE_tresh):
+        for column in df.columns:
+            if (df[column].dtype == 'object') & (df[column].nunique() > WOE_tresh):
                 my_WOE.fit(X_train,column,target)
                 X_train.loc[:,column] = my_WOE.transform(X_train,column,target)
                 X_test.loc[:,column] = my_WOE.transform(X_test,column,target)
+                Print_Msg.print_msg1("Transformed {0} from object to Weight of Evidence WOE".format(column,))
+        if WOE_print:
+            Print_Msg.print_msg1("Below is created WOE dictionary")
+            print(my_WOE.get_WOE_dict())
+
         X_train.drop([target], axis = 1,inplace=True) 
         X_test.drop([target], axis = 1,inplace=True) 
         return X_train, X_test, y_train, y_test
-
-    
