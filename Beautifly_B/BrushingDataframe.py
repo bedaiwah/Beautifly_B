@@ -31,7 +31,7 @@ pd.options.plotting.backend = 'holoviews'
 class BrushingDataframe(pd.DataFrame):
     """
     The class is used to extend the properties of Dataframes to a prticular
-    type of Dataframes in the Risk Indistry. 
+    type of Dataframes in the Risk Industry. 
     It provides the end user with both general and specific cleaning functions, 
     though they never reference a specific VARIABLE NAME.
     
