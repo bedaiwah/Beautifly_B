@@ -213,7 +213,7 @@ class BrushingDataframe(pd.DataFrame):
         if input_vars:
             df = df[input_vars]
             
-            
+            #test
         ### Check if Ordinal features is selected 
         for column in ordinal_vars:
             new_ord = column+"_ORD"
