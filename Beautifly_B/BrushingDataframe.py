@@ -137,7 +137,8 @@ class BrushingDataframe(pd.DataFrame):
         null_df = null_df.loc[null_df ['Null Counts']>0].rename_axis('Features').reset_index()
         null_table = hv.Table(null_df, label='Features with Null Values')
 
-        ## Provide Basic stats
+        ## Provide Basic stats azmi
+
         kurt_l= []
         column_l =[]
         gmean_l = []
