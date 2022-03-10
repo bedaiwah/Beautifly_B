@@ -99,6 +99,7 @@ class BrushingDataframe(pd.DataFrame):
           A print with the analysis or new clean columns .
 
         """
+        #need comments
         if input_vars:
             self = self[input_vars]
             
