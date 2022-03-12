@@ -25,6 +25,7 @@ from ordinal import Ordinal
 import numpy
 ## 
 
+
 pd.options.plotting.backend = 'holoviews'
 
 class BrushingDataframe(pd.DataFrame):
