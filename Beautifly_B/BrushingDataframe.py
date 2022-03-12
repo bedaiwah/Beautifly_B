@@ -288,3 +288,4 @@ class BrushingDataframe(pd.DataFrame):
         X_train.drop([target], axis = 1,inplace=True) 
         X_test.drop([target], axis = 1,inplace=True) 
         return X_train, X_test, y_train, y_test
+    
