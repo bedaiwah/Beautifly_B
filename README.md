@@ -11,19 +11,20 @@ say_hello()
 _____________
 Features
 -----------------------------------------------------------------------------------------------------------------
-- **Target analysis** 
-  - Shows how a target value (e.g. "Survived" in the Titanic dataset) relates to other features
+- **Feature analysis** 
+  - Shows features with Null Values 
+  - Basic statistics like kurtosis, skewness and Gmean
+  - Features Data Types with unique rows 
 - **Visualize and compare**
-  - Distinct datasets (e.g. training vs test data)
+  - Distinct datasets 
   - Intra-set characteristics (e.g. male versus female)
 - **Mixed-type associations**
-  - Sweetviz integrates associations for numerical (Pearson's correlation), categorical (uncertainty coefficient) and categorical-numerical (correlation ratio) datatypes seamlessly, to provide maximum information for all data types.
+  - Beautifly_B integrates associations for numerical (Pearson's correlation), categorical (uncertainty coefficient) and categorical-numerical (correlation ratio) datatypes seamlessly, to provide maximum information for all data types.
 - **Type inference**
   - Automatically detects numerical, categorical and text features, with optional manual overrides 
 - **Summary information** 
   - Type, unique values, missing values, duplicate rows, most frequent values
-  - Numerical analysis: 
-    - min/max/range, quartiles, mean, mode, standard deviation, sum, median absolute deviation, coefficient of variation, kurtosis, skewness
+  
 -----------------------------------------------------------------------------------------------------------------
 Upgrading 
 -----------------------------------------------------------
