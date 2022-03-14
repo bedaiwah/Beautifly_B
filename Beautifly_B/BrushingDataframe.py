@@ -4,9 +4,10 @@ Created on 4th March 2022
 
 @author: Team B IE University
 """
+
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from sklearn import preprocessing
 import holoviews as hv; hv.extension('bokeh', 'matplotlib')
@@ -16,13 +17,12 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 pd.options.mode.chained_assignment = None
-#need more commints
+
 ## custom classes
 from woe import WOE
 from print_msg import Print_Msg
 from stats_bs import Stats_BS
 from ordinal import Ordinal
-import numpy
 ## 
 
 pd.options.plotting.backend = 'holoviews'
@@ -30,7 +30,7 @@ pd.options.plotting.backend = 'holoviews'
 class BrushingDataframe(pd.DataFrame):
     """
     The class is used to extend the properties of Dataframes to a prticular
-    type of Dataframes in the Risk Industry. 
+    type of Dataframes in the Risk Indistry. 
     It provides the end user with both general and specific cleaning functions, 
     though they never reference a specific VARIABLE NAME.
     
@@ -98,7 +98,6 @@ class BrushingDataframe(pd.DataFrame):
           A print with the analysis or new clean columns .
 
         """
-        #need comments
         if input_vars:
             self = self[input_vars]
             
@@ -137,8 +136,7 @@ class BrushingDataframe(pd.DataFrame):
         null_df = null_df.loc[null_df ['Null Counts']>0].rename_axis('Features').reset_index()
         null_table = hv.Table(null_df, label='Features with Null Values')
 
-        ## Provide Basic stats azmi
-
+        ## Provide Basic stats
         kurt_l= []
         column_l =[]
         gmean_l = []
@@ -194,9 +192,11 @@ class BrushingDataframe(pd.DataFrame):
     
     
 
-    def recommended_transformation(self, input_vars=[], ordinal_vars=[], WOE_tresh = 10,  target='',reference_date= '',test_size_in= 0.3, WOE_print = False):
+    def recommended_transformation(self, input_vars=[], ordinal_vars=[], WOE_tresh = 10, target='',reference_date= '',test_size_in= 0.3, 
+    WOE_print = False, scaler = True):
         """
-        
+        Transformation for Weight of evidance (WOE) is only for binary classification. 
+
         TO BE IMPLEMENTED: data preparation (for each column provide methods to perform
         transformations - for example: time calculation like age, days as customers, 
         days to due date, label encoding, imputation, standard scalling, dummy creation 
@@ -212,7 +212,7 @@ class BrushingDataframe(pd.DataFrame):
         if input_vars:
             df = df[input_vars]
             
-            #test
+            
         ### Check if Ordinal features is selected 
         for column in ordinal_vars:
             new_ord = column+"_ORD"
@@ -229,8 +229,8 @@ class BrushingDataframe(pd.DataFrame):
                 df[column] = pd.to_datetime(df[column])
                 #log_recom.append("  Convert "+column+" to Date types")
                 month = str(column.upper().replace('DATE', ""))+"_MONTH"
-                #df[month] = df[column].dt.month_name(locale='English') - remove locale by Azmidri
-                df[month] = df[column].dt.month_name
+                #df[month] = df[column].dt.month_name(locale='English') # locale has  issue with some laptop
+                df[month] = df[column].dt.month_name()
                 Print_Msg.print_msg1("Transformed {0} from Date to Month".format(column))
                 #log_recom.append("Create new feature based on refference day ")
                 if (column != reference_date) and (reference_date != ''):
@@ -253,39 +253,63 @@ class BrushingDataframe(pd.DataFrame):
         for column in df.columns:
             if (df[column].dtype == 'object') & (df[column].nunique() <= WOE_tresh):
                 dummy_feat.append(column)
-        try:
+        if dummy_feat:
             dummy_df = pd.get_dummies(df[dummy_feat])
             df.drop(columns = dummy_feat, axis = 1,inplace=True)
             df = pd.concat([df, dummy_df], axis=1)
-            Print_Msg.print_msg1("Replace categorical features with dummies {0}...".format(str(dummy_feat[:])))
-        except ValueError:
-            pass
+            Print_Msg.print_msg1("Replace categorical features with dummy features {0}...".format(str(dummy_feat[:])))
 
         ### Split 
-        df = df.reset_index()
+        try:
+            df = df.reset_index()
+        except ValueError:
+            pass
         df.drop(['index'], axis = 1,inplace=True)
         df = df.select_dtypes(exclude=['datetime64[ns]'])
-        y = df[target]
-        X = df.drop([target], axis = 1) 
-        X_train, X_test, y_train, y_test = train_test_split(X, y,stratify=df[target], test_size=test_size_in)
-        Print_Msg.print_msg1("Split train with {0} records and test with {1} records \n both with {2} columns ".format(str(X_train.shape[0]),str( X_test.shape[0]),str(X_train.shape[1])))
+
+
+        if (not target)| (target not in df.columns):
+            Print_Msg.print_msg1("Please enter a valid target")
+            return None,None,None,None
+    
+        else:
+            if (len(set(df[target])) !=2):
+                Print_Msg.print_msg1("Target is not binary classification and transformation is aborted")
+                return None,None,None,None
+
+            else:
+                y = df[target]    
+                X = df.drop([target], axis = 1) 
+                X_train, X_test, y_train, y_test = train_test_split(X, y,stratify=df[target], test_size=test_size_in)
+                Print_Msg.print_msg1("Split train with {0} records and test with {1} records \n both with {2} columns ".format(str(X_train.shape[0]),str( X_test.shape[0]),str(X_train.shape[1])))
             
         ### WOE on categorical features based on treshold default 10 unique category values. Fit on training data and transform to training and test data
         ### We use WOE to reduce number of dummy features from features with high unique categorical values
-        my_WOE = WOE()
-        X_train.loc[:,target] = y_train
-        X_test.loc[:,target] = y_test
+                my_WOE = WOE()
+                X_train.loc[:,target] = y_train
+                X_test.loc[:,target] = y_test
+       
+                for column in df.columns:
+                    if (df[column].dtype == 'object') & (df[column].nunique() > WOE_tresh):
+                        my_WOE.fit(X_train,column,target)
+                        X_train.loc[:,column] = my_WOE.transform(X_train,column,target)
+                        X_test.loc[:,column] = my_WOE.transform(X_test,column,target)
+                        Print_Msg.print_msg1("Transformed {0} from object to Weight of Evidence WOE".format(column,))
+                if WOE_print:
+                    Print_Msg.print_msg1("Below is created WOE dictionary")
+                    print(my_WOE.get_WOE_dict())
+ 
+                X_train = X_train.fillna(0)
+                X_test = X_test.fillna(0)
+                X_train.drop([target], axis = 1,inplace=True) 
+                X_test.drop([target], axis = 1,inplace=True) 
 
-        for column in df.columns:
-            if (df[column].dtype == 'object') & (df[column].nunique() > WOE_tresh):
-                my_WOE.fit(X_train,column,target)
-                X_train.loc[:,column] = my_WOE.transform(X_train,column,target)
-                X_test.loc[:,column] = my_WOE.transform(X_test,column,target)
-                Print_Msg.print_msg1("Transformed {0} from object to Weight of Evidence WOE".format(column,))
-        if WOE_print:
-            Print_Msg.print_msg1("Below is created WOE dictionary")
-            print(my_WOE.get_WOE_dict())
+                # Scaled them up
+                feature_names = X_train.columns
+                if scaler:
+                    scaler = preprocessing.StandardScaler().fit(X_train)
+                    X_train = scaler.transform(X_train)
+                    X_test = scaler.transform(X_test)
 
-        X_train.drop([target], axis = 1,inplace=True) 
-        X_test.drop([target], axis = 1,inplace=True) 
-        return X_train, X_test, y_train, y_test
+                Print_Msg.print_msg1("Apply standard scaling for all input features")
+                return X_train, X_test, y_train, y_test, feature_names
