@@ -47,30 +47,45 @@ cleaning_missing(  self, input_vars=[])
             modelling and why, for the ones keeping indicates which cleaning / transformation 
             is recommended for the missing values and if scalling / dummy creation is recommended, 
             if not always inform that is not necessary
-- **layout**: Either `'widescreen'` or `'vertical'`. The widescreen layout displays details on the right side of the screen, as the mouse goes over each feature. The new (as of 2.0) vertical layout is more compact horizontally and enables expanding each detail area upon clicking.
-- **scale**: Use a floating-point number (`scale= 0.8` or `None`) to scale the entire report. This is very useful to fit reports to any output.
-- **open_browser**: Enables the automatic opening of a web browser to show the report. Since under some circumstances this is not desired (or causes issues with some IDE's), you can disable it here.
+            If column is Numerical variable the missing null values will be replaced with Mean
+            If column is Categorical variable the missing null values will be replaced with Mode
 
-### show_notebook()
+        Returns
+        -------
+          clean columns filled with missing values.
+          
+### scanning()
 ```
-show_notebook(  w=None, 
-                h=None, 
-                scale=None,
-                layout='widescreen',
-                filepath=None)
+scanning( self, input_vars=[])
 ```            
-**show_notebook(...)** is new as of 2.0 and will embed an IFRAME element showing the report right inside a notebook (e.g. Jupyter, Google Colab, etc.). 
+**scanning(...)**  provided Basic statistics like kurtosis, skewness and Gmean
+                   Checks the data types
+                   Plots histograms with variables 
+                   Plots correlation between features
 
-Note that since notebooks are generally a more constrained visual environment, it is probably a good idea to use custom width/height/scale values (`w`, `h`, `scale`) and even **set custom default values in an INI override** (see below). The options are:
-- **w** (width): Sets the width of the output _window_ for the report (the full report may not fit; use `layout` and/or `scale` for the report itself). Can be as a percentage string (`w="100%"`) or number of pixels (`w=900`).
-- **h** (height): Sets the height of the output _window_ for the report. Can be as a number of pixels (`h=700`) or "Full" to stretch the window to be as tall as all the features (`h="Full"`).
-- **scale**: Same as for show_html, above.
-- **layout**: Same as for show_html, above.
-- **scale**: Same as for show_html, above.
-- **filepath**: An optional output HTML report.
+        Returns
+        -------
+          A print with the analysis or new clean columns .
+          
+### recommended_transformation()
+```
+recommended_transformation( self, input_vars=[],ordinal_vars=[], WOE_tresh = 10,  target='',reference_date= '',test_size_in= 0.3, WOE_print = False))
+```            
+**recommended_transformation(...)**  data preparation (for each column provide methods to perform
+        transformations - for example: time calculation like age, days as customers, 
+        days to due date, label encoding, imputation, standard scalling, dummy creation 
+        or replacement of category value by its probability of default depending, justify 
+        transformation depending of the variable type, or explain why transformation is 
+        not necessary);
 
-Delete features that suspected record ID .
+        Returns
+        -------
+          Print newly transformed columns .
+
+References .
 -----------------------------------------------------------------------------------------------------------------
+Packages referenced are Holoviews, Bokeh and Hvplot.
+
 -----------------------------------------------------------------------------------------------------------------
 Replace categorical features with dummy features 
 Split train with  and test 
