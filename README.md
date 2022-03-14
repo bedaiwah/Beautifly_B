@@ -1,6 +1,7 @@
 # Beautifly_B
 Beautifly_B is an open-source Python library that generates beautiful, high-density visualizations to kickstart EDA (Exploratory Data Analysis) with just Few lines of code. Output is a fully self-contained HTML application.
 
+The system is built around quickly visualizing target values and comparing datasets. Its goal is to help quick analysis of target characteristics other such data characterization tasks.
 
 Example code
 from demo import say_hello
@@ -9,7 +10,7 @@ say_hello()
 "# Beautifly_B" 
 _____________
 This package will help you with EDA by doing the following:
-Transformed from Date to Month
+Features
 -----------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------
 Transformed from Date to number 
