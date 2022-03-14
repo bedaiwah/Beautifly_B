@@ -229,7 +229,8 @@ class BrushingDataframe(pd.DataFrame):
                 df[column] = pd.to_datetime(df[column])
                 #log_recom.append("  Convert "+column+" to Date types")
                 month = str(column.upper().replace('DATE', ""))+"_MONTH"
-                df[month] = df[column].dt.month_name(locale='English')
+                #df[month] = df[column].dt.month_name(locale='English') - remove locale by Azmidri
+                df[month] = df[column].dt.month_name
                 Print_Msg.print_msg1("Transformed {0} from Date to Month".format(column))
                 #log_recom.append("Create new feature based on refference day ")
                 if (column != reference_date) and (reference_date != ''):
