@@ -95,5 +95,5 @@ Apply standard scaling for all input featuresit will provide a HTML page with th
 \\Features with Null Values
 \\Features Basic Stats
 \\Features data types
- \\In addition to different plots
+ \\In addition to different plots.
 
