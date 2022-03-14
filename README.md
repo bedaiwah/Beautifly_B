@@ -7,7 +7,7 @@ say_hello()
 ...
 "# Beautifly_B" 
 _____________
-This package will help you with EDA by doing the following :
+This package will help you with EDA by doing the following:
 Transformed from Date to Month
 -----------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------
