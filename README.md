@@ -11,6 +11,19 @@ say_hello()
 _____________
 Features
 -----------------------------------------------------------------------------------------------------------------
+- **Target analysis** 
+  - Shows how a target value (e.g. "Survived" in the Titanic dataset) relates to other features
+- **Visualize and compare**
+  - Distinct datasets (e.g. training vs test data)
+  - Intra-set characteristics (e.g. male versus female)
+- **Mixed-type associations**
+  - Sweetviz integrates associations for numerical (Pearson's correlation), categorical (uncertainty coefficient) and categorical-numerical (correlation ratio) datatypes seamlessly, to provide maximum information for all data types.
+- **Type inference**
+  - Automatically detects numerical, categorical and text features, with optional manual overrides 
+- **Summary information** 
+  - Type, unique values, missing values, duplicate rows, most frequent values
+  - Numerical analysis: 
+    - min/max/range, quartiles, mean, mode, standard deviation, sum, median absolute deviation, coefficient of variation, kurtosis, skewness
 -----------------------------------------------------------------------------------------------------------------
 Upgrading 
 -----------------------------------------------------------
@@ -25,7 +38,35 @@ pip install Beautifly_B
 
 Basic Usage
 -----------------------------------------------------------------------------------------------------------------
-asas
+### show_html()
+```
+show_html(  filepath='SWEETVIZ_REPORT.html', 
+            open_browser=True, 
+            layout='widescreen', 
+            scale=None)
+```            
+**show_html(...)** will create and save an HTML report at the given file path. There are options for:
+- **layout**: Either `'widescreen'` or `'vertical'`. The widescreen layout displays details on the right side of the screen, as the mouse goes over each feature. The new (as of 2.0) vertical layout is more compact horizontally and enables expanding each detail area upon clicking.
+- **scale**: Use a floating-point number (`scale= 0.8` or `None`) to scale the entire report. This is very useful to fit reports to any output.
+- **open_browser**: Enables the automatic opening of a web browser to show the report. Since under some circumstances this is not desired (or causes issues with some IDE's), you can disable it here.
+
+### show_notebook()
+```
+show_notebook(  w=None, 
+                h=None, 
+                scale=None,
+                layout='widescreen',
+                filepath=None)
+```            
+**show_notebook(...)** is new as of 2.0 and will embed an IFRAME element showing the report right inside a notebook (e.g. Jupyter, Google Colab, etc.). 
+
+Note that since notebooks are generally a more constrained visual environment, it is probably a good idea to use custom width/height/scale values (`w`, `h`, `scale`) and even **set custom default values in an INI override** (see below). The options are:
+- **w** (width): Sets the width of the output _window_ for the report (the full report may not fit; use `layout` and/or `scale` for the report itself). Can be as a percentage string (`w="100%"`) or number of pixels (`w=900`).
+- **h** (height): Sets the height of the output _window_ for the report. Can be as a number of pixels (`h=700`) or "Full" to stretch the window to be as tall as all the features (`h="Full"`).
+- **scale**: Same as for show_html, above.
+- **layout**: Same as for show_html, above.
+- **scale**: Same as for show_html, above.
+- **filepath**: An optional output HTML report.
 
 Delete features that suspected record ID .
 -----------------------------------------------------------------------------------------------------------------
