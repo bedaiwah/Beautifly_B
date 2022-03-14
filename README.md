@@ -1,5 +1,6 @@
 # Beautifly_B
-This is a simple minimal set of codes to do EDA for Dataset #create a Python Package
+Beautifly_B is an open-source Python library that generates beautiful, high-density visualizations to kickstart EDA (Exploratory Data Analysis) with just Few lines of code. Output is a fully self-contained HTML application.
+
 
 Example code
 from demo import say_hello
