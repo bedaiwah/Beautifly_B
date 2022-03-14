@@ -14,7 +14,7 @@ Features
 -----------------------------------------------------------------------------------------------------------------
 Upgrading 
 -----------------------------------------------------------
-Some people have experienced mixed results behavior upgrading through pip. To update to the latest from an existing install, it is recommended to pip uninstall sweetviz first, then simply install.
+Some people have experienced mixed results behavior upgrading through pip. To update to the latest from an existing install, it is recommended to pip uninstall sweetBeautifly_B first, then simply install.
 -----------------------------------------------------------------------------------------------------------------
 Transformed from Date to number of days based on target 
 -----------------------------------------------------------------------------------------------------------------
