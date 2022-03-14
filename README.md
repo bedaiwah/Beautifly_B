@@ -38,14 +38,14 @@ pip install Beautifly_B
 
 Basic Usage
 -----------------------------------------------------------------------------------------------------------------
-### show_html()
+### cleaning_missing()
 ```
-show_html(  filepath='SWEETVIZ_REPORT.html', 
-            open_browser=True, 
-            layout='widescreen', 
-            scale=None)
+cleaning_missing(  self, input_vars=[])
 ```            
-**show_html(...)** will create and save an HTML report at the given file path. There are options for:
+**cleaning_missing(...)** scan each column, indicating if droping or keeping the variable for 
+            modelling and why, for the ones keeping indicates which cleaning / transformation 
+            is recommended for the missing values and if scalling / dummy creation is recommended, 
+            if not always inform that is not necessary
 - **layout**: Either `'widescreen'` or `'vertical'`. The widescreen layout displays details on the right side of the screen, as the mouse goes over each feature. The new (as of 2.0) vertical layout is more compact horizontally and enables expanding each detail area upon clicking.
 - **scale**: Use a floating-point number (`scale= 0.8` or `None`) to scale the entire report. This is very useful to fit reports to any output.
 - **open_browser**: Enables the automatic opening of a web browser to show the report. Since under some circumstances this is not desired (or causes issues with some IDE's), you can disable it here.
