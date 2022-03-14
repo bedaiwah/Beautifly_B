@@ -9,12 +9,12 @@ say_hello()
 ...
 "# Beautifly_B" 
 _____________
-This package will help you with EDA by doing the following:
 Features
 -----------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------
-Transformed from Date to number 
+Upgrading 
 -----------------------------------------------------------
+Some people have experienced mixed results behavior upgrading through pip. To update to the latest from an existing install, it is recommended to pip uninstall sweetviz first, then simply install.
 -----------------------------------------------------------------------------------------------------------------
 Transformed from Date to number of days based on target 
 -----------------------------------------------------------------------------------------------------------------
