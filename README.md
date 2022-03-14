@@ -3,9 +3,7 @@ Beautifly_B is an open-source Python library that generates beautiful, high-dens
 
 The system is built around quickly visualizing target values and comparing datasets. Its goal is to help quick analysis of target characteristics other such data characterization tasks.
 
-Example code
-from demo import say_hello
-say_hello()
+
 ...
 "# Beautifly_B" 
 _____________
